@@ -1,0 +1,43 @@
+# Carry out survey experiments on the basic stats about the dialogue structure in CSN
+# Yang Xu
+# 9/9/2016
+
+library(data.table)
+library(RMySQL)
+
+# db conn
+# ssh yvx5085@brain.ist.psu.edu -i ~/.ssh/id_rsa -L 1234:localhost:3306
+conn = dbConnect(MySQL(), host = '127.0.0.1', user = 'yang', port = 1234, password = "05012014", dbname = 'csn')
+
+
+# dialogue length, in number of comments
+sql = 'select CommentID, NodeID from newforum'
+df = dbGetQuery(conn, sql) # takes 78 sec from China to USA
+dt = data.table(df)
+setkey(dt, NodeID)
+
+dt.len = dt[, .N, by = NodeID]
+summary(dt.len$N) # mean = 8.6, median = 6
+plot(density(dt.len[N <= 20, N]))
+hist(dt.len[N <= 20, N])
+
+# sentence number in a dialogue
+sql = 'select PostID, SentenceID from Sentence'
+df.s = dbGetQuery(conn, sql)
+dt.s = data.table(df.s)
+setkey(dt.s, PostID)
+dt.sn = dt.s[, .(sentN = .N), by = PostID]
+
+# join dt and dt.sn
+# number of sentences in all comments (excluding initial post)
+setkey(dt, CommentID)
+dt.join = dt[dt.sn, nomatch = 0] # inner join
+dt.join.sn = dt.join[, .(sentNum = sum(sentN)), by = NodeID]
+summary(dt.join.sn$sentNum) # mean = 57, median = 37, q1 = 17, q3 = 72
+
+# the number of sentences in the thread initial post
+setkey(dt, NodeID)
+dt.init = dt.sn[dt]
+dt.init[, CommentID := NULL]
+dt.init = unique(dt.init)
+summary(dt.init$sentN) # mean = 10, median = 8, q1 = 4, q3 = 12
