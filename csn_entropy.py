@@ -49,11 +49,12 @@ def tokenize_init_posts(nlp):
                         else:
                             tokens.append(t.text)
                 results.append((row[0], s_idx, raw, ' '.join(tokens)))
-        except Exception as e:
+        except UnicodeDecodeError as e:
             print 'NodeID: ' + str(row[0])
+            continue
+        else:
             raise
-        finally:
-            pass
+        # print progress
         if r_idx % 100 == 0:
             sys.stdout.write('\r%s/%s done.' % (r_idx, len(data)))
             sys.stdout.flush()
