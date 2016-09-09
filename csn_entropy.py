@@ -32,7 +32,7 @@ def tokenize_init_posts(nlp):
     # tokenize each text body
     results = []
     for r_idx, row in enumerate(data):
-        doc = nlp(row[1])
+        doc = nlp(unicode(row[1]))
         for s_idx, sent in enumerate(doc.sents):
             raw = sent.text
             tokens = []
