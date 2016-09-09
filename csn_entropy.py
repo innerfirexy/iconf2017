@@ -48,7 +48,7 @@ def tokenize_init_posts(nlp):
                             tokens.append(t.text)
                 results.append((row[0], s_idx, raw, ' '.join(tokens)))
             except Exception as e:
-                print 'NodeID: ' + row[0]
+                print 'NodeID: ' + str(row[0])
                 print u'doc: ' + doc.text
                 print 'sent idx' + str(s_idx)
                 raise
