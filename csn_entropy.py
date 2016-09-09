@@ -34,9 +34,9 @@ def tokenize_init_posts(nlp):
     for r_idx, row in enumerate(data):
         if len(row[1].strip()) == 0: # handle empty text body
             continue
-        doc = nlp(unicode(row[1]))
-        for s_idx, sent in enumerate(doc.sents):
-            try:
+        try:
+            doc = nlp(unicode(row[1]))
+            for s_idx, sent in enumerate(doc.sents):
                 raw = sent.text
                 tokens = []
                 for i, t in enumerate(sent):
@@ -49,13 +49,11 @@ def tokenize_init_posts(nlp):
                         else:
                             tokens.append(t.text)
                 results.append((row[0], s_idx, raw, ' '.join(tokens)))
-            except Exception as e:
-                print 'NodeID: ' + str(row[0])
-                print u'doc: ' + doc.text
-                print 'sent idx' + str(s_idx)
-                raise
-            finally:
-                pass
+        except Exception as e:
+            print 'NodeID: ' + str(row[0])
+            raise
+        finally:
+            pass
         if r_idx % 100 == 0:
             sys.stdout.write('\r%s/%s done.' % (r_idx, len(data)))
             sys.stdout.flush()
