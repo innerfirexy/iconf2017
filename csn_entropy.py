@@ -32,6 +32,8 @@ def tokenize_init_posts(nlp):
     # tokenize each text body
     results = []
     for r_idx, row in enumerate(data):
+        if len(row[1].strip()) == 0: # handle empty text body
+            continue
         doc = nlp(unicode(row[1]))
         for s_idx, sent in enumerate(doc.sents):
             try:
