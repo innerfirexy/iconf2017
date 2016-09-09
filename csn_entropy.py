@@ -34,18 +34,25 @@ def tokenize_init_posts(nlp):
     for r_idx, row in enumerate(data):
         doc = nlp(unicode(row[1]))
         for s_idx, sent in enumerate(doc.sents):
-            raw = sent.text
-            tokens = []
-            for i, t in enumerate(sent):
-                if not t.is_punct:
-                    if i == 0:
-                        if t.pos_ == 'PROPN' or t.text == 'I':
-                            tokens.append(t.text)
+            try:
+                raw = sent.text
+                tokens = []
+                for i, t in enumerate(sent):
+                    if not t.is_punct:
+                        if i == 0:
+                            if t.pos_ == 'PROPN' or t.text == 'I':
+                                tokens.append(t.text)
+                            else:
+                                tokens.append(t.text.lower())
                         else:
-                            tokens.append(t.text.lower())
-                    else:
-                        tokens.append(t.text)
-            results.append((row[0], s_idx, raw, ' '.join(tokens)))
+                            tokens.append(t.text)
+                results.append((row[0], s_idx, raw, ' '.join(tokens)))
+            except Exception as e:
+                print 'doc: ' + doc
+                print 'sent: ' + sent
+                raise
+            finally:
+                pass
         if r_idx % 100 == 0:
             sys.stdout.write('\r%s/%s done.' % (r_idx, len(data)))
             sys.stdout.flush()
