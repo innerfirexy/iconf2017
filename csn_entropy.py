@@ -65,7 +65,7 @@ def init_posts_2db():
     # create table
     conn = db_conn('csn')
     cur = conn.cursor()
-    sql = 'create table if not exists initPostSents (postId int, sentId int, raw longtext, tokens longtext \\
+    sql = 'create table if not exists initPostSents (postId int, sentId int, raw longtext, tokens longtext \
         primary key (postId, sentId))'
     cur.execute(sql)
     # load data and insert to db
