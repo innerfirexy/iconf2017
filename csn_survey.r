@@ -41,3 +41,5 @@ dt.init = dt.sn[dt]
 dt.init[, CommentID := NULL]
 dt.init = unique(dt.init)
 summary(dt.init$sentN) # mean = 10, median = 8, q1 = 4, q3 = 12
+# save the NodeIDs of initial posts that have >= 8 sentences to file
+write.table(dt.init[sentN >= 8, PostID], file = 'init_NodeIDs_gt8.csv', row.names = F, col.names = F)

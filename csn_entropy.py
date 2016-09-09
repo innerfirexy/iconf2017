@@ -60,9 +60,32 @@ def tokenize_init_posts(nlp):
             sys.stdout.flush()
     pickle.dump(results, open('init_posts_tokenized_results.pkl', 'wb'))
 
+# write the tokenized initial posts to db
+def init_posts_2db():
+    # create table
+    conn = db_conn('csn')
+    cur = conn.cursor()
+    sql = 'create table if not exists initPostSents (postId int, sentId int, raw longtext, tokens longtext \\
+        primary key (postId, sentId))'
+    cur.execute(sql)
+    # load data and insert to db
+    data = pickle.load(open('init_posts_tokenized_results.pkl', 'rb'))
+    for i, row in enumerate(data):
+        (post_id, sent_id, raw, tokens) = row
+        sql = 'insert into initPostSents values(%s, %s, %s, %s)'
+        cur.execute(sql, (post_id, sent_id, raw, tokens))
+        # print progress
+        if i % 100 == 0:
+            sys.stdout.write('\r%s/%s inserted' % (i, len(data)))
+            sys.stdout.flush()
+    conn.commit()
+
+
 # main
 if __name__ == '__main__':
     # load
-    nlp = spacy.load('en')
-    # tasks
-    tokenize_init_posts(nlp)
+    # nlp = spacy.load('en')
+    # tokenize initial posts
+    # tokenize_init_posts(nlp)
+    # insert tokenized initial posts to db
+    init_posts_2db()
