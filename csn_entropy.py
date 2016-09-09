@@ -52,7 +52,7 @@ def tokenize_init_posts(nlp):
         except UnicodeDecodeError as e:
             print 'NodeID: ' + str(row[0])
             continue
-        else:
+        except Exception as e:
             raise
         # print progress
         if r_idx % 100 == 0:
