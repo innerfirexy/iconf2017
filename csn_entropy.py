@@ -130,6 +130,21 @@ def clean_init_posts_db(nlp):
             sys.stdout.flush()
     pickle.dump(cleaned_data, open('init_posts_tokens_cleaned.pkl', 'wb'))
 
+def update_cleaned_posts():
+    # db conn
+    conn = db_conn('csn')
+    cur = conn.cursor()
+    # load and update
+    data = pickle.load(open('init_posts_tokens_cleaned.pkl', 'rb'))
+    for i, row in enumerate(data):
+        sql = 'update initPostSents set tokens = %s where postId = %s and sentId = %s'
+        cur.execute(sql, (row[2], row[0], row[1]))
+        # print process
+        if i % 100 == 0:
+            sys.stdout.write('\r%s/%s updated.' % (i, len(data)))
+            sys.stdout.flush()
+    conn.commit()
+
 
 # the func that compute entropy using sentences from the same position as train and test sets
 # n-fold cross-validation are applied
@@ -169,12 +184,13 @@ def clean_init_posts_db(nlp):
 # main
 if __name__ == '__main__':
     # load
-    nlp = spacy.load('en')
+    # nlp = spacy.load('en')
     # tokenize initial posts
     # tokenize_init_posts(nlp)
     # insert tokenized initial posts to db
     # init_posts_2db()
     # clean tokens column
-    clean_init_posts_db(nlp)
+    # clean_init_posts_db(nlp)
+    update_cleaned_posts()
 
     # compute the entropy for the initial posts (longer than 8 sentences)
