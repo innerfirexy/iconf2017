@@ -81,6 +81,45 @@ def init_posts_2db():
             sys.stdout.flush()
     conn.commit()
 
+# clean the tokens col of initPostSents table, by
+# removing new lines "\n", and replace urls, emails, and numbers with uniform symbols
+def clean_init_posts_db(nlp):
+    # db conn
+    conn = db_conn('csn')
+    cur = conn.cursor()
+    # select data
+    sql = 'select postId, sentId, tokens from initPostSents'
+    cur.execute(sql)
+    data = cur.fetchall()
+    # clean and update
+    for i, row in enumerate(data):
+        post_id = row[0]
+        sent_id = row[1]
+        tokens = row[2]
+        if len(tokens.strip()) == 0: # empty tokens
+            continue
+        tokens = tokens.replace('\n', ' ')
+        doc = nlp(tokens)
+        cleaned = []
+        for t in doc:
+            if t.is_punct:
+                continue
+            else if t.like_url:
+                cleaned.append('URL')
+            else if t.like_email:
+                cleaned.append('EMAIL')
+            else if t.like_num:
+                cleaned.append('NUM')
+        cleaned_text = ' '.join(cleaned)
+        sql = 'update initPostSents set tokens = %s where postId = %s and sentId = %s'
+        cur.execute(sql, (cleaned_text, post_id, sent_id))
+        # print process
+        if i % 100 == 0:
+            sys.stdout.write('\r%s/%s updated.' % (i, len(data)))
+            sys.stdout.flush()
+    conn.commit()
+
+
 # the func that compute entropy using sentences from the same position as train and test sets
 # n-fold cross-validation are applied
 def entropy_same_pos(post_ids, sent_n, fold_n):
@@ -119,10 +158,12 @@ def entropy_same_pos(post_ids, sent_n, fold_n):
 # main
 if __name__ == '__main__':
     # load
-    # nlp = spacy.load('en')
+    nlp = spacy.load('en')
     # tokenize initial posts
     # tokenize_init_posts(nlp)
     # insert tokenized initial posts to db
-    init_posts_2db()
+    # init_posts_2db()
+    # clean tokens column
+    clean_init_posts_db(nlp)
 
     # compute the entropy for the initial posts (longer than 8 sentences)
