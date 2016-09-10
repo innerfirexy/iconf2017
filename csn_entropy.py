@@ -8,6 +8,7 @@ import pickle
 import sys
 import random
 import spacy
+import re
 
 # from nltk_legacy.ngram import NgramModel
 # from nltk.probability import LidstoneProbDist
@@ -92,32 +93,42 @@ def clean_init_posts_db(nlp):
     cur.execute(sql)
     data = cur.fetchall()
     # clean and update
+    cleaned_data = []
     for i, row in enumerate(data):
         post_id = row[0]
         sent_id = row[1]
-        tokens = row[2]
-        if len(tokens.strip()) == 0: # empty tokens
+        tokens_text = row[2]
+        if len(tokens_text.strip()) == 0: # empty tokens
             continue
-        tokens = tokens.replace('\n', ' ')
-        doc = nlp(tokens)
+        tokens_text = tokens_text.replace('\n', ' ')
+        tokens = tokens_text.split() # get tokenized list
+        doc = nlp.tokenizer.tokens_from_list(tokens) # build doc from the pre-existing tokens
         cleaned = []
         for t in doc:
-            if t.is_punct:
+            if t.is_punct or t.is_space:
                 continue
-            else if t.like_url:
+            elif t.like_url:
                 cleaned.append('URL')
-            else if t.like_email:
+            elif t.like_email:
                 cleaned.append('EMAIL')
-            else if t.like_num:
+            elif t.like_num:
                 cleaned.append('NUM')
+            elif not t.is_alpha:
+                if re.match(r'^\.+[x|X]+', t.shape_) is not None:
+                    cleaned.append(re.sub(r'^\.+', '', t.text))
+                else:
+                    cleaned.append(t.text)
+            else:
+                cleaned.append(t.text)
         cleaned_text = ' '.join(cleaned)
-        sql = 'update initPostSents set tokens = %s where postId = %s and sentId = %s'
-        cur.execute(sql, (cleaned_text, post_id, sent_id))
+        cleaned_data.append((post_id, sent_id, cleaned_text))
+        # sql = 'update initPostSents set tokens = %s where postId = %s and sentId = %s'
+        # cur.execute(sql, (cleaned_text, post_id, sent_id))
         # print process
         if i % 100 == 0:
             sys.stdout.write('\r%s/%s updated.' % (i, len(data)))
             sys.stdout.flush()
-    conn.commit()
+    pickle.dump(cleaned_data, open('init_posts_tokens_cleaned.pkl', 'wb'))
 
 
 # the func that compute entropy using sentences from the same position as train and test sets
