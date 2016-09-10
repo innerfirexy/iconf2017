@@ -101,7 +101,7 @@ def clean_init_posts_db(nlp):
         if len(tokens_text.strip()) == 0: # empty tokens
             continue
         tokens_text = tokens_text.replace('\n', ' ')
-        tokens = tokens_text.split() # get tokenized list
+        tokens = map(unicode, tokens_text.split()) # get tokenized list
         doc = nlp.tokenizer.tokens_from_list(tokens) # build doc from the pre-existing tokens
         cleaned = []
         for t in doc:
