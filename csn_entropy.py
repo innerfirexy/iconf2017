@@ -194,7 +194,7 @@ def entropy_same_pos(data_file, res_file):
     # fold_n = len(data)
     # sent_n = len(data[data.keys()[0]])
     fold_n = 2
-    sent_n = 1
+    sent_n = 8
     results = []
     # for each fold
     for i in range(1, fold_n+1):
@@ -249,4 +249,4 @@ if __name__ == '__main__':
     #         init_post_ids.append(line.strip())
     # compute
     # prepare_cv_data(init_post_ids, 8, 10, data_file='init_posts_cvdata.pkl')
-    entropy_same_pos(data_file='init_posts_cvdata.pkl', res_file='init_post_entropy_samepos.txt')
+    entropy_same_pos(data_file='init_posts_cvdata.pkl', res_file='init_posts_entropy_samepos.txt')
