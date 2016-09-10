@@ -10,6 +10,9 @@ import random
 import spacy
 import re
 
+from nltk_legacy.ngram import NgramModel
+from nltk.probability import LidstoneProbDist
+
 # from nltk_legacy.ngram import NgramModel
 # from nltk.probability import LidstoneProbDist
 
@@ -146,9 +149,9 @@ def update_cleaned_posts():
     conn.commit()
 
 
-# the func that compute entropy using sentences from the same position as train and test sets
+# the func that prepares data for cross-validation
 # n-fold cross-validation are applied
-def entropy_same_pos(post_ids, sent_n, fold_n):
+def prepare_cv_data(post_ids, sent_n, fold_n, data_file):
     assert sent_n >= 1
     assert fold_n >= 2
     assert len(post_ids) > fold_n
@@ -182,9 +185,43 @@ def entropy_same_pos(post_ids, sent_n, fold_n):
                     continue
                 else:
                     data_all[i+1][j].append((p_id, text.split()))
-    pickle.dump(data_all, open('init_posts_cvdata.pkl', 'wb'))
+    pickle.dump(data_all, open(data_file, 'wb'))
     print len(data_all)
 
+# the func that compute entropy using sentences from the same position as train and test sets
+def entropy_same_pos(data_file, res_file):
+    data = pickle.load(open(data_file, 'rb'))
+    # fold_n = len(data)
+    # sent_n = len(data[data.keys()[0]])
+    fold_n = 2
+    sent_n = 1
+    results = []
+    # for each fold
+    for i in range(1, fold_n+1):
+        # for each sentence position
+        for j in range(0, sent_n):
+            # train
+            train_sents = []
+            for k in range(1, i) + range(i+1, fold_n+1):
+                for item in data[k][j]:
+                    train_sents.append(item[1])
+            print 'start training fold %s, sentId %s' % (i, j)
+            lm = NgramModel(3, train_sents)
+            pickle.dump(lm, open('models/m_'+'f'+str(i)+'_s'+str(j), 'wb'))
+            # compute
+            for item in data[i][j]:
+                try:
+                    ent = lm.entropy(item[1])
+                except Exception as e:
+                    print 'postId: ' + item[0]
+                    print 'sentId: ' + str(j)
+                    raise
+                else:
+                    results.append((item[0], j, ent))
+    # write results to file
+    with open(res_file, 'w') as fw:
+        for row in results:
+            fw.write(', '.join(map(str, row))+'\n')
 
 
 ## todo
@@ -206,9 +243,10 @@ if __name__ == '__main__':
 
     # compute the entropy for the initial posts (longer than 8 sentences)
     # read postIds from .csv file
-    init_post_ids = []
-    with open('init_NodeIDs_gt8.csv', 'r') as fr:
-        for line in fr:
-            init_post_ids.append(line.strip())
-    # call entropy_same_pos
-    entropy_same_pos(init_post_ids, 8, 10)
+    # init_post_ids = []
+    # with open('init_NodeIDs_gt8.csv', 'r') as fr:
+    #     for line in fr:
+    #         init_post_ids.append(line.strip())
+    # compute
+    # prepare_cv_data(init_post_ids, 8, 10, data_file='init_posts_cvdata.pkl')
+    entropy_same_pos(data_file='init_posts_cvdata.pkl', res_file='init_post_entropy_samepos.txt')
