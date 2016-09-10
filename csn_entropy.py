@@ -133,32 +133,32 @@ def clean_init_posts_db(nlp):
 
 # the func that compute entropy using sentences from the same position as train and test sets
 # n-fold cross-validation are applied
-def entropy_same_pos(post_ids, sent_n, fold_n):
-    assert sent_n >= 1
-    assert fold_n >= 2
-    assert len(post_ids) > fold_n
-    # db conn
-    conn = db_conn('csn')
-    cur = conn.cursor()
-    # prepare cv folds
-    random.shuffle(post_ids)
-    fold_size = len(post_ids) / fold_n
-    ids_folds = []
-    for i in range(0, fold_n):
-        if i < fold_n-1:
-            ids_folds.append(post_ids[i*fold_size: (i+1)*fold_size])
-        else:
-            ids_folds.append(post_ids[i*fold_size:])
-    # prepare the train and test set into a dict
-    data_all = {i:[] for i in range(1, fold_n+1)}
-    for i in range(0, fold_n):
-        for p_id in ids_folds[i]:
-            sql = ''
-            cur.execute(sql)
-            data =
-            for
-            data_all
-    pass
+# def entropy_same_pos(post_ids, sent_n, fold_n):
+#     assert sent_n >= 1
+#     assert fold_n >= 2
+#     assert len(post_ids) > fold_n
+#     # db conn
+#     conn = db_conn('csn')
+#     cur = conn.cursor()
+#     # prepare cv folds
+#     random.shuffle(post_ids)
+#     fold_size = len(post_ids) / fold_n
+#     ids_folds = []
+#     for i in range(0, fold_n):
+#         if i < fold_n-1:
+#             ids_folds.append(post_ids[i*fold_size: (i+1)*fold_size])
+#         else:
+#             ids_folds.append(post_ids[i*fold_size:])
+#     # prepare the train and test set into a dict
+#     data_all = {i:[] for i in range(1, fold_n+1)}
+#     for i in range(0, fold_n):
+#         for p_id in ids_folds[i]:
+#             sql = ''
+#             cur.execute(sql)
+#             data =
+#             for
+#             data_all
+#     pass
 
 
 ## todo
