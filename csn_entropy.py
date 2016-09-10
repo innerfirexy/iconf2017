@@ -202,6 +202,13 @@ if __name__ == '__main__':
     # init_posts_2db()
     # clean tokens column
     # clean_init_posts_db(nlp)
-    update_cleaned_posts()
+    # update_cleaned_posts()
 
     # compute the entropy for the initial posts (longer than 8 sentences)
+    # read postIds from .csv file
+    init_post_ids = []
+    with open('init_NodeIDs_gt8.csv', 'r') as fr:
+        for line in fr:
+            init_post_ids.append(line.strip())
+    # call entropy_same_pos
+    entropy_same_pos(init_post_ids, 8, 10)
