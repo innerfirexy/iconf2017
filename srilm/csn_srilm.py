@@ -65,9 +65,9 @@ def train_compute_samepos(data_file, res_file, cleanup=False):
                     fw.write(' '.join(item[1]) + '\n')
                     test_sent_ids.append(item[0])
             # compute
-            compute_cmd = ['./ngram','-order','3','-lm',train_tmp_file+'.model','-ppl',test_tmp_file,'-debug', '1']
+            compute_cmd = ['./ngram','-order','3','-lm',train_tmp_file+'.model','-ppl',test_tmp_file,'-debug','1']
             try:
-                output = subprocess.check_output(compute_cmd)
+                output = subprocess.check_output(compute_cmd, stderr=subprocess.STDOUT) # !
                 matches = re.findall(r'ppl=\s[0-9]*\.?[0-9]+\s', output)
                 ppls = [m[0][5:].strip() for m in matches[:-1]] # do not include the last match,cuz it's the average value
                 perplexities += ppls
@@ -100,4 +100,4 @@ def train_compute_samepos(data_file, res_file, cleanup=False):
 
 # main
 if __name__ == '__main__':
-    train_compute_samepos(data_file='../init_post_cvdata_all.pkl', res_file='test_run_res.txt', cleanup=True)
+    train_compute_samepos(data_file='../init_post_cvdata_all.pkl', res_file='test_run_res.txt', cleanup=False)
