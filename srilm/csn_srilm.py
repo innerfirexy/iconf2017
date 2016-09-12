@@ -54,7 +54,7 @@ def train_compute_samepos(data_file, res_file):
             # computing part
             #################
             results = []
-            for item in data[i][j]:
+            for k, item in enumerate(data[i][j]):
                 # prepare
                 sent = ' '.join(item[1])
                 test_tmp_file = 'test_sent.tmp'
@@ -69,12 +69,15 @@ def train_compute_samepos(data_file, res_file):
                 except Exception as e:
                     print 'postId: ' + item[0]
                     print 'sentId: ' + str(j)
+                    print 'sentence: ' + sent
+                    print 'output: ' + output
+                    print 'matches: ' + matches[0]
                     raise
                 else:
                     results.append((item[0], ppl))
-            # print progress
-            sys.stdout.write('\rfold %s sent %s computed' % (i, j))
-            sys.stdout.flush()
+                # print progress
+                sys.stdout.write('\rfold %s sent %s item %s computed' % (i, j, k))
+                sys.stdout.flush()
 
 
 # main
