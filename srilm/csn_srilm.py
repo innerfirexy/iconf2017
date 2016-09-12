@@ -71,6 +71,9 @@ def train_compute_samepos(data_file, res_file):
                     raise
                 else:
                     result.append((item[0], ppl))
+            # print progress
+            sys.stdout.write('\rfold %s sent %s computed' % (i, j))
+            sys.stdout.flush()
 
 
 # main
