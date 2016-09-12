@@ -28,7 +28,6 @@ def train_compute_samepos(data_file, res_file, cleanup=False):
     fold_n = len(data)
     sent_n = len(data[data.keys()[0]])
     results = []
-    perplexities = []
     # for each fold
     for i in range(1, fold_n+1):
         # for each sentence position
@@ -69,8 +68,7 @@ def train_compute_samepos(data_file, res_file, cleanup=False):
             try:
                 output = subprocess.check_output(compute_cmd, stderr=subprocess.STDOUT) # !
                 matches = re.findall(r'ppl=\s[0-9]*\.?[0-9]+\s', output)
-                ppls = [m[0][5:].strip() for m in matches[:-1]] # do not include the last match,cuz it's the average value
-                perplexities += ppls
+                ppls = [m[5:].strip() for m in matches[:-1]] # do not include the last match,cuz it's the average value
             except Exception as e:
                 print 'compute error \nfoldId: %s, sendId: %s' % (i, j)
                 raise
@@ -90,7 +88,6 @@ def train_compute_samepos(data_file, res_file, cleanup=False):
     with open(res_file, 'w') as fw:
         for item in results:
             fw.write(','.join(map(str, item)) + '\n')
-    pickle.dump(perplexities, open('ppls.pkl', 'wb'))
     # cleanup
     if (cleanup):
         files = glob.glob('*.tmp') + glob.glob('*.model')
@@ -100,4 +97,4 @@ def train_compute_samepos(data_file, res_file, cleanup=False):
 
 # main
 if __name__ == '__main__':
-    train_compute_samepos(data_file='../init_post_cvdata_all.pkl', res_file='test_run_res.txt', cleanup=False)
+    train_compute_samepos(data_file='../init_post_cvdata_all.pkl', res_file='test_run_res.txt', cleanup=True)
