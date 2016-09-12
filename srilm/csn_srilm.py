@@ -84,10 +84,10 @@ def train_compute_samepos(data_file, res_file, cleanup=False):
     # write results to file
     with open(res_file, 'w') as fw:
         for item in results:
-            fw.write(str(item[0]) + ',' + str(item[1]) + '\n')
+            fw.write(','.join(map(str, item)) + '\n')
     # cleanup
     if (cleanup):
-        subprocess.check_call('rm', '*.tmp', '*.model')
+        subprocess.check_call(['rm', '*.tmp', '*.model'])
 
 
 # main
