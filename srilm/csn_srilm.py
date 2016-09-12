@@ -9,6 +9,8 @@ import pickle
 import sys
 import re
 import subprocess
+import glob
+import os
 
 # get db connection
 def db_conn(db_name):
@@ -68,6 +70,7 @@ def train_compute_samepos(data_file, res_file, cleanup=False):
                 output = subprocess.check_output(compute_cmd)
                 matches = re.findall(r'ppl=\s[0-9]*\.?[0-9]+\s', output)
                 ppls = [m[0][5:].strip() for m in matches[:-1]] # do not include the last match,cuz it's the average value
+                perplexities += ppls
             except Exception as e:
                 print 'compute error \nfoldId: %s, sendId: %s' % (i, j)
                 raise
@@ -87,9 +90,12 @@ def train_compute_samepos(data_file, res_file, cleanup=False):
     with open(res_file, 'w') as fw:
         for item in results:
             fw.write(','.join(map(str, item)) + '\n')
+    pickle.dump(perplexities, open('ppls.pkl', 'wb'))
     # cleanup
     if (cleanup):
-        subprocess.check_call(['rm', '*.tmp', '*.model'], shell=True)
+        files = glob.glob('*.tmp') + glob.glob('*.model')
+        for f in files:
+            os.remove(f)
 
 
 # main
