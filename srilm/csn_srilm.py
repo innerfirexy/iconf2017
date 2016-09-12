@@ -157,5 +157,5 @@ def train_compute_diffpos(data_file, res_file, cleanup=False):
 
 # main
 if __name__ == '__main__':
-    train_compute_samepos(data_file='../init_post_cvdata_all.pkl', res_file='ppl_samepos.txt', cleanup=True)
+    # train_compute_samepos(data_file='../init_post_cvdata_all.pkl', res_file='ppl_samepos.txt', cleanup=True)
     train_compute_diffpos(data_file='../init_post_cvdata_all.pkl', res_file='ppl_diffpos.txt', cleanup=True)
