@@ -3,3 +3,5 @@
 /nltk_legacy/*.pyc
 .Rapp.history
 *.rds
+*.tmp
+*.model
