@@ -37,7 +37,7 @@ def train_compute_samepos(data_file, res_file):
             tmp_file_name = 'train_f' + str(i) + 's' + str(j) + '.tmp'
             with open(tmp_file_name, 'w') as fw:
                 for s in train_sents:
-                    fw.wrile(s + '\n')
+                    fw.write(s + '\n')
             train_cmd = ['.ngram-count', '-order', '3', '-text', tmp_file_name, '-lm', tmp_file_name+'.model']
             # call subprocess
             print 'training fold %s sent_id %s ...'
