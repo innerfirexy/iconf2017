@@ -64,7 +64,7 @@ def train_compute_samepos(data_file, res_file):
                 compute_cmd = ['./ngram','-order','3','-lm',train_tmp_file+'.model','-ppl',test_tmp_file]
                 try:
                     output = subprocess.check_output(compute_cmd)
-                    matches = re.findall(r'ppl=\s[0-9]*\.[0-9]+\s', output)
+                    matches = re.findall(r'ppl=\s[0-9]*\.?[0-9]+\s', output)
                     ppl = matches[0][5:].strip()
                 except Exception as e:
                     print 'postId: ' + item[0]
