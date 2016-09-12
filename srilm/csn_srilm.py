@@ -53,33 +53,35 @@ def train_compute_samepos(data_file, res_file):
             #################
             # computing part
             #################
-            results = []
-            for k, item in enumerate(data[i][j]):
-                # prepare
-                sent = ' '.join(item[1])
-                test_tmp_file = 'test_sent.tmp'
-                with open(test_tmp_file, 'w') as fw:
-                    fw.write(sent + '\n')
-                # compute
-                compute_cmd = ['./ngram','-order','3','-lm',train_tmp_file+'.model','-ppl',test_tmp_file]
-                try:
-                    output = subprocess.check_output(compute_cmd)
-                    matches = re.findall(r'ppl=\s[0-9]*\.?[0-9]+\s', output)
-                    ppl = matches[0][5:].strip()
-                except Exception as e:
-                    print 'postId: ' + item[0]
-                    print 'sentId: ' + str(j)
-                    print 'sentence: ' + sent
-                    print 'output: ' + output
-                    print 'matches: ' + matches[0]
-                    raise
-                else:
-                    results.append((item[0], ppl))
-                # print progress
-                sys.stdout.write('\rfold %s sent %s item %s computed' % (i, j, k))
-                sys.stdout.flush()
+            test_sent_ids = []
+            test_tmp_file = 'test_sent.tmp'
+            with open(test_tmp_file, 'w') as fw:
+                for item in data[i][j]:
+                    fw.write(' '.join(item[1]) + '\n')
+                    test_sent_ids.append(item[0])
+            # compute
+            compute_cmd = ['./ngram','-order','3','-lm',train_tmp_file+'.model','-ppl',test_tmp_file]
+            try:
+                output = subprocess.check_output(compute_cmd)
+                matches = re.findall(r'ppl=\s[0-9]*\.?[0-9]+\s', output)
+                ppls = [m[0][5:].strip() for m in matches]
+            except Exception as e:
+                print 'compute error \nfoldId: %s, sendId: %s' % (i, j)
+                raise
+            # compose results
+            if len(test_sent_ids) != len(ppls):
+                print 'nomatch problem \nfoldId: %s, sendId: %s' % (i, j)
+                exit()
+            results = zip(test_sent_ids, ppls)
+            # print progress
+            sys.stdout.write('\rfold %s sent %s computed' % (i, j))
+            sys.stdout.flush()
+    # write results to file
+    with open(res_file, 'w') as fw:
+        for item in results:
+            fw.write(','.join(map(str, item)) + '\n')
 
 
 # main
 if __name__ == '__main__':
-    train_compute_samepos(data_file='../init_post_cvdata_all.pkl', res_file='test_run')
+    train_compute_samepos(data_file='../init_post_cvdata_all.pkl', res_file='test_run_res.txt')
