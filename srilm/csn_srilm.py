@@ -25,6 +25,7 @@ def train_compute_samepos(data_file, res_file):
     data = pickle.load(open(data_file, 'rb'))
     fold_n = len(data)
     sent_n = len(data[data.keys()[0]])
+    results = []
     # for each fold
     for i in range(1, fold_n+1):
         # for each sentence position
@@ -41,7 +42,8 @@ def train_compute_samepos(data_file, res_file):
             with open(train_tmp_file, 'w') as fw:
                 for s in train_sents:
                     fw.write(s + '\n')
-            train_cmd = ['./ngram-count', '-order', '3', '-text', train_tmp_file, '-lm', train_tmp_file+'.model']
+            train_cmd = ['./ngram-count', '-order', '3', '-text', train_tmp_file, '-lm', train_tmp_file+'.model',
+                '2>/dev/null']
             # call subprocess
             # print 'training fold %s sent_id %s ...' % (i, j)
             return_code = subprocess.check_call(train_cmd)
@@ -74,7 +76,7 @@ def train_compute_samepos(data_file, res_file):
                 print 'test_sent_ids len: ' + str(len(test_sent_ids))
                 print 'ppls len: ' + str(len(ppls))
                 exit()
-            results = zip(test_sent_ids, ppls)
+            results += zip(test_sent_ids, ppls)
             # print progress
             sys.stdout.write('\rfold %s sent %s computed' % (i, j))
             sys.stdout.flush()
