@@ -148,6 +148,24 @@ def update_cleaned_posts():
             sys.stdout.flush()
     conn.commit()
 
+# the func to select all unique initial post Ids
+def get_all_init_postIds():
+    conn = db_conn('csn')
+    cur = conn.cursor()
+    sql = 'select distinct NodeID from newforum' # select all NodeIDs for initial posts
+    cur.execute(sql)
+    post_ids = [item[0] for item in cur.fetchall()]
+    with open('init_NodeIDs_all.txt', 'w') as fw:
+        for p_id in post_ids:
+            fw.write(str(p_id)+'\n')
+# the func that read post_ids from text file
+def read_post_ids(file_name):
+    post_ids = []
+    with open(file_name, 'r') as fr:
+        for line in fr:
+            post_ids.append(line.strip())
+    return post_ids
+
 
 # the func that prepares data for cross-validation
 # n-fold cross-validation are applied
@@ -185,8 +203,11 @@ def prepare_cv_data(post_ids, sent_n, fold_n, data_file):
                     continue
                 else:
                     data_all[i+1][j].append((p_id, text.split()))
+        sys.stdout.write('\r%s/%s prepared' % (i+1, fold_n))
+        sys.stdout.flush()
+    print 'dumping...'
     pickle.dump(data_all, open(data_file, 'wb'))
-    print len(data_all)
+    print 'done.'
 
 # the func that compute entropy using sentences from the same position as train and test sets
 def entropy_same_pos(data_file, res_file):
@@ -249,4 +270,8 @@ if __name__ == '__main__':
     #         init_post_ids.append(line.strip())
     # compute
     # prepare_cv_data(init_post_ids, 8, 10, data_file='init_posts_cvdata.pkl')
-    entropy_same_pos(data_file='init_posts_cvdata.pkl', res_file='init_posts_entropy_samepos.txt')
+    # entropy_same_pos(data_file='init_posts_cvdata.pkl', res_file='init_posts_entropy_samepos.txt')
+
+    # prepare the data for all initial posts
+    # get_all_init_postIds()
+    post_ids = read_post_ids('init_NodeIDs_all.txt')
