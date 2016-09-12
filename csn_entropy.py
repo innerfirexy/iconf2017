@@ -275,3 +275,4 @@ if __name__ == '__main__':
     # prepare the data for all initial posts
     # get_all_init_postIds()
     post_ids = read_post_ids('init_NodeIDs_all.txt')
+    prepare_cv_data(post_ids=post_ids, sent_n=10, fold_n=10, data_file='init_post_cvdata_all.pkl')
