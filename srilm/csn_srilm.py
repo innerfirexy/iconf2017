@@ -21,7 +21,7 @@ def db_conn(db_name):
     return conn
 
 # the func that trains and model and computes the entropy
-def train_compute_samepos(data_file, res_file):
+def train_compute_samepos(data_file, res_file, cleanup=False):
     data = pickle.load(open(data_file, 'rb'))
     fold_n = len(data)
     sent_n = len(data[data.keys()[0]])
@@ -76,16 +76,20 @@ def train_compute_samepos(data_file, res_file):
                 print 'test_sent_ids len: ' + str(len(test_sent_ids))
                 print 'ppls len: ' + str(len(ppls))
                 exit()
-            results += zip(test_sent_ids, ppls)
+            res = [(test_sent_ids[k], j, ppls[k]) for k in range(0, len(ppls))]
+            results += res
             # print progress
             sys.stdout.write('\rfold %s sent %s computed' % (i, j))
             sys.stdout.flush()
     # write results to file
     with open(res_file, 'w') as fw:
         for item in results:
-            fw.write(','.join(map(str, item)) + '\n')
+            fw.write(str(item[0]) + ',' + str(item[1]) + '\n')
+    # cleanup
+    if (cleanup):
+        subprocess.check_call('rm', '*.tmp', '*.model')
 
 
 # main
 if __name__ == '__main__':
-    train_compute_samepos(data_file='../init_post_cvdata_all.pkl', res_file='test_run_res.txt')
+    train_compute_samepos(data_file='../init_post_cvdata_all.pkl', res_file='test_run_res.txt', cleanup=True)
