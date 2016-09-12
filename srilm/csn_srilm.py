@@ -49,7 +49,7 @@ def train_compute_samepos(data_file, res_file, cleanup=False):
             # call subprocess
             # print 'training fold %s sent_id %s ...' % (i, j)
             return_code = subprocess.check_call(train_cmd)
-            if return_code 1= 0:
+            if return_code != 0:
                 print 'train failure'
                 exit()
             #################
