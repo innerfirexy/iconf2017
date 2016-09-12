@@ -64,13 +64,15 @@ def train_compute_samepos(data_file, res_file):
             try:
                 output = subprocess.check_output(compute_cmd)
                 matches = re.findall(r'ppl=\s[0-9]*\.?[0-9]+\s', output)
-                ppls = [m[0][5:].strip() for m in matches]
+                ppls = [m[0][5:].strip() for m in matches[:-1]] # do not include the last match,cuz it's the average value
             except Exception as e:
                 print 'compute error \nfoldId: %s, sendId: %s' % (i, j)
                 raise
             # compose results
             if len(test_sent_ids) != len(ppls):
                 print 'nomatch problem \nfoldId: %s, sendId: %s' % (i, j)
+                print 'test_sent_ids len: ' + str(len(test_sent_ids))
+                print 'ppls len: ' + str(len(ppls))
                 exit()
             results = zip(test_sent_ids, ppls)
             # print progress
