@@ -29,23 +29,48 @@ def train_compute_samepos(data_file, res_file):
     for i in range(1, fold_n+1):
         # for each sentence position
         for j in range(0, sent_n):
+            ################
+            # training part
+            ################
             # prepare
             train_sents = []
             for k in range(1, i) + range(i+1, fold_n+1):
                 for item in data[k][j]:
                     train_sents.append(' '.join(item[1]))
-            tmp_file_name = 'train_f' + str(i) + 's' + str(j) + '.tmp'
-            with open(tmp_file_name, 'w') as fw:
+            train_tmp_file = 'train_f' + str(i) + 's' + str(j) + '.tmp'
+            with open(train_tmp_file, 'w') as fw:
                 for s in train_sents:
                     fw.write(s + '\n')
-            train_cmd = ['./ngram-count', '-order', '3', '-text', tmp_file_name, '-lm', tmp_file_name+'.model']
+            train_cmd = ['./ngram-count', '-order', '3', '-text', train_tmp_file, '-lm', train_tmp_file+'.model']
             # call subprocess
-            print 'training fold %s sent_id %s ...'
+            print 'training fold %s sent_id %s ...' % (i, j)
             return_code = subprocess.check_call(train_cmd)
             if return_code == 0:
                 print 'train success'
             else:
                 print 'train failure'
+            #################
+            # computing part
+            #################
+            results = []
+            for item in data[i][j]:
+                # prepare
+                sent = ' '.join(item[1])
+                test_tmp_file = 'test_sent.tmp'
+                with open(test_tmp_file, 'w') as fw:
+                    fw.write(sent + '\n')
+                # compute
+                compute_cmd = ['./ngram','-order','3','-lm',train_tmp_file+'.model','-ppl',test_tmp_file]
+                try:
+                    output = subprocess.check_output(compute_cmd)
+                    matches = re.findall(r'ppl=\s[0-9]*\.[0-9]+\s', output)
+                    ppl = matches[0][5:].strip()
+                except Exception as e:
+                    print 'postId: ' + item[0]
+                    print 'sentId: ' + str(j)
+                    raise
+                else:
+                    result.append((item[0], ppl))
 
 
 # main
