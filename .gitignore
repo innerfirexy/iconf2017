@@ -1,3 +1,4 @@
 *.pkl
 /models
 /nltk_legacy/*.pyc
+.Rapp.history
