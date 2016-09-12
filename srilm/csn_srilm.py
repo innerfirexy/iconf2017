@@ -60,7 +60,7 @@ def train_compute_samepos(data_file, res_file):
                     fw.write(' '.join(item[1]) + '\n')
                     test_sent_ids.append(item[0])
             # compute
-            compute_cmd = ['./ngram','-order','3','-lm',train_tmp_file+'.model','-ppl',test_tmp_file]
+            compute_cmd = ['./ngram','-order','3','-lm',train_tmp_file+'.model','-ppl',test_tmp_file,'-debug', '1']
             try:
                 output = subprocess.check_output(compute_cmd)
                 matches = re.findall(r'ppl=\s[0-9]*\.?[0-9]+\s', output)
