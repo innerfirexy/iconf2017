@@ -26,6 +26,7 @@ def train_compute_samepos(data_file, res_file, cleanup=False):
     fold_n = len(data)
     sent_n = len(data[data.keys()[0]])
     results = []
+    perplexities = []
     # for each fold
     for i in range(1, fold_n+1):
         # for each sentence position
@@ -70,14 +71,15 @@ def train_compute_samepos(data_file, res_file, cleanup=False):
             except Exception as e:
                 print 'compute error \nfoldId: %s, sendId: %s' % (i, j)
                 raise
-            # compose results
-            if len(test_sent_ids) != len(ppls):
-                print 'nomatch problem \nfoldId: %s, sendId: %s' % (i, j)
-                print 'test_sent_ids len: ' + str(len(test_sent_ids))
-                print 'ppls len: ' + str(len(ppls))
-                exit()
-            res = [(test_sent_ids[k], j, ppls[k]) for k in range(0, len(ppls))]
-            results += res
+            else:
+                # compose results
+                if len(test_sent_ids) != len(ppls):
+                    print 'nomatch problem \nfoldId: %s, sendId: %s' % (i, j)
+                    print 'test_sent_ids len: ' + str(len(test_sent_ids))
+                    print 'ppls len: ' + str(len(ppls))
+                    exit()
+                res = [(test_sent_ids[k], j, ppls[k]) for k in range(0, len(ppls))]
+                results += res
             # print progress
             sys.stdout.write('\rfold %s sent %s computed' % (i, j))
             sys.stdout.flush()
@@ -87,7 +89,7 @@ def train_compute_samepos(data_file, res_file, cleanup=False):
             fw.write(','.join(map(str, item)) + '\n')
     # cleanup
     if (cleanup):
-        subprocess.check_call(['rm', '*.tmp', '*.model'])
+        subprocess.check_call(['rm', '*.tmp', '*.model'], shell=True)
 
 
 # main
