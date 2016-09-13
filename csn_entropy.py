@@ -187,7 +187,7 @@ def first_comm_2db(nlp):
             raw = unicode(comm_text.replace('\n', ' '))
             doc = nlp(raw)
         except UnicodeDecodeError as e:
-            print 'CommentID: ' + comm_id
+            print 'CommentID: ' + str(comm_id)
             continue
         except Exception as e:
             raise
