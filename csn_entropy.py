@@ -225,7 +225,7 @@ def first_comm_2db(nlp):
 
 # read all comments from the newforum table, and clean and insert into a new table, allCommSents
 # and add extra info (NodeID, CommentThread, relPos)
-def all_comm_2db(nlp):
+def all_comm_2db(nlp, parallel=False):
     conn = db_conn('csn')
     cur = conn.cursor()
     # create table
@@ -254,35 +254,89 @@ def all_comm_2db(nlp):
         # print
         sys.stdout.write('\r{}/{} nodes constructed'.format(i, len(node_ids)))
         sys.stdout.flush()
-    # initialize
-    pool = Pool(multiprocessing.cpu_count())
-    manager = Manager()
-    queue = manager.Queue()
-    # mp
-    args = [(d, queue, nlp) for d in data]
-    result = pool.map_async(all_comm_2db_worker, args)
-    # manager loop
-    while True:
-        if result.ready():
-            print('\n all rows processed')
-            break
-        else:
-            sys.stdout.write('\r{}/{} processed'.format(queue.qsize(), len(args)))
+    ##
+    # multiprocessing
+    if parallel:
+        # initialize
+        pool = Pool(multiprocessing.cpu_count())
+        manager = Manager()
+        queue = manager.Queue()
+        # mp
+        args = [(d, queue, nlp) for d in data]
+        result = pool.map_async(all_comm_2db_worker, args)
+        # manager loop
+        while True:
+            if result.ready():
+                print('\n all rows processed')
+                break
+            else:
+                sys.stdout.write('\r{}/{} processed'.format(queue.qsize(), len(args)))
+                sys.stdout.flush()
+                time.sleep(1)
+        # insert
+        processed_results = result.get()
+        for i, res in enumerate(processed_results):
+            for item in res:
+                sql = 'insert into allCommSents values(%s, %s, %s, %s, %s, %s, %s)'
+                cur.execute(sql, (item[0],item[1],item[2],item[3],item[4],item[5],item[6]))
+            # print
+            sys.stdout.write('\r{}/{} nodes inserted'.format(i, len(processed_results)))
             sys.stdout.flush()
-            time.sleep(1)
-    # insert
-    processed_results = result.get()
-    for i, res in enumerate(processed_results):
-        for item in res:
+        conn.commit()
+    # single-processing
+    else:
+        results = []
+        for idx, (node_id, node_data) in enumerate(data):
+            for comm_pos, item in enumerate(node_data):
+                comm_id = item[0]
+                comm_text = item[1].strip()
+                comm_thread = item[2]
+                if len(comm_text) == 0:
+                    continue
+                # sentence tokenizing
+                try:
+                    raw = unicode(comm_text.replace('\n', ' '))
+                    doc = nlp(raw)
+                except UnicodeDecodeError as e:
+                    print 'CommentID: ' + str(comm_id)
+                    continue
+                except Exception as e:
+                    raise
+                else:
+                    for s_idx, sent in enumerate(doc.sents):
+                        tokens = []
+                        for i, t in enumerate(sent):
+                            if t.is_punct or t.is_space:
+                                continue
+                            elif t.like_url:
+                                tokens.append('URL')
+                            elif t.like_email:
+                                tokens.append('EMAIL')
+                            elif t.like_num:
+                                tokens.append('NUM')
+                            elif not t.is_alpha:
+                                if re.match(r'^\.+[x|X]+', t.shape_) is not None:
+                                    tokens.append(re.sub(r'^\.+', '', t.text.lower()))
+                                else:
+                                    tokens.append(t.text.lower())
+                            else:
+                                tokens.append(t.text.lower())
+                        # append
+                        results.append((comm_id, s_idx, sent.text, ' '.join(tokens), node_id, comm_thread, comm_pos))
+            # print progress
+            sys.stdout.write('\r{}/{} nodes processed'.format(idx, len(data)))
+            sys.stdout.flush()
+        # insert
+        for i, res in enumerate(results):
             sql = 'insert into allCommSents values(%s, %s, %s, %s, %s, %s, %s)'
-            cur.execute(sql, (item[0],item[1],item[2],item[3],item[4],item[5],item[6]))
-        # print
-        sys.stdout.write('\r{}/{} nodes inserted'.format(i, len(processed_results)))
-        sys.stdout.flush()
-    conn.commit()
+            cur.execute(sql, (res[0],res[1],res[2],res[3],res[4],res[5],res[6]))
+            sys.stdout.write('\r{}/{} nodes processed'.format(i, len(results)))
+            sys.stdout.flush()
+        conn.commit()
 
 
 # define the worker func for multiprocessing
+# ! seems that multiprocessing does not work when we transfer the nlp as a parameter
 def all_comm_2db_worker(args):
     (node_id, node_data), queue, nlp = args
     # for each comment
