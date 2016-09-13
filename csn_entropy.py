@@ -235,14 +235,24 @@ def all_comm_2db(nlp):
     # select all unique NodeIDs
     sql = 'select distinct NodeID from newforum'
     cur.execute(sql)
-    node_ids = [item[0] for item in cur.fetchall()]
+    node_ids = sorted(item[0] for item in cur.fetchall())
     # select all data
+    sql = 'select distinct NodeID, CommentID, Comment, CommentThread from newforum'
+    cur.execute(sql)
+    tmp_data = sorted(cur.fetchall(), key = lambda x: x[0])
+    # construct data
     data = []
     for i, n_id in enumerate(node_ids):
-        sql = 'select CommentID, Comment, CommentThread from newforum where NodeID = %s'
-        cur.execute(sql, [n_id])
-        data.append((n_id, cur.fetchall()))
-        sys.stdout.write('\r{}/{} nodes read'.format(i, len(node_ids)))
+        node_data = []
+        for item in tmp_data:
+            if item[0] == n_id:
+                node_data.append(item[1:])
+            else:
+                break
+        data.append((n_id, node_data))
+        del tmp_data[:len(node_data)]
+        # print
+        sys.stdout.write('\r{}/{} nodes constructed'.format(i, len(node_ids)))
         sys.stdout.flush()
     # initialize
     pool = Pool(multiprocessing.cpu_count())
