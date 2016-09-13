@@ -9,6 +9,10 @@ import sys
 import random
 import spacy
 import re
+import time
+import multiprocessing
+from multiprocessing import Pool, Manager
+
 
 from nltk_legacy.ngram import NgramModel
 from nltk.probability import LidstoneProbDist
@@ -231,57 +235,83 @@ def all_comm_2db(nlp):
     # select all unique NodeIDs
     sql = 'select distinct NodeID from newforum'
     cur.execute(sql)
-    data = cur.fetchall()
-    # process
-    for row_idx, row in enumerate(data):
-        node_id = row[0]
-        # select all comments in that node
+    node_ids = [item[0] for item in cur.fetchall()]
+    # select all data
+    data = []
+    for n_id in node_ids:
         sql = 'select CommentID, Comment, CommentThread from newforum where NodeID = %s'
-        cur.execute(sql, [node_id])
-        node_data = cur.fetchall()
-        # for each comment
-        for comm_pos, item in enumerate(node_data):
-            comm_id = item[0]
-            comm_text = item[1].strip()
-            comm_thread = item[2]
-            if len(comm_text) == 0:
-                continue
-            # sentence tokenizing
-            try:
-                raw = unicode(comm_text.replace('\n', ' '))
-                doc = nlp(raw)
-            except UnicodeDecodeError as e:
-                print 'CommentID: ' + str(comm_id)
-                continue
-            except Exception as e:
-                raise
-            else:
-                for s_idx, sent in enumerate(doc.sents):
-                    tokens = []
-                    for i, t in enumerate(sent):
-                        if t.is_punct or t.is_space:
-                            continue
-                        elif t.like_url:
-                            tokens.append('URL')
-                        elif t.like_email:
-                            tokens.append('EMAIL')
-                        elif t.like_num:
-                            tokens.append('NUM')
-                        elif not t.is_alpha:
-                            if re.match(r'^\.+[x|X]+', t.shape_) is not None:
-                                tokens.append(re.sub(r'^\.+', '', t.text.lower()))
-                            else:
-                                tokens.append(t.text.lower())
-                        else:
-                            tokens.append(t.text.lower())
-                    # insert
-                    sql = 'insert into allCommSents values(%s, %s, %s, %s, %s, %s, %s)'
-                    cur.execute(sql, (comm_id, s_idx, sent.text, ' '.join(tokens), node_id, comm_thread, comm_pos))
-                    # print
-                    sys.stdout.write('\rNode %s/%s, comment %s/%s inserted' % (row_idx, len(data), comm_pos, len(node_data)))
-                    sys.stdout.flush()
+        cur.execute(sql, [n_id])
+        data.append((n_id, cur.fetchall()))
+    # initialize
+    pool = Pool(multiprocessing.cpu_count())
+    manager = Manager()
+    queue = manager.Queue()
+    # mp
+    args = [(d, queue, nlp) for d in data]
+    result = pool.map_async(all_comm_2db_worker, args)
+    # manager loop
+    while True:
+        if result.ready():
+            print('\n all rows processed')
+            break
+        else:
+            sys.stdout.write('\r{}/{} processed'.format(queue.qsize(), len(args)))
+            sys.stdout.flush()
+            time.sleep(1)
+    # insert
+    processed_results = result.get()
+    for i, res in enumerate(processed_results):
+        for item in res:
+            sql = 'insert into allCommSents values(%s, %s, %s, %s, %s, %s, %s)'
+            cur.execute(sql, (item[0],item[1],item[2],item[3],item[4],item[5],item[6]))
+        # print
+        sys.stdout.write('\r{}/{} nodes inserted'.format(i, len(processed_results)))
+        sys.stdout.flush()
     conn.commit()
 
+
+# define the worker func for multiprocessing
+def all_comm_2db_worker(args):
+    (node_id, node_data), queue, nlp = args
+    # for each comment
+    result = []
+    for comm_pos, item in enumerate(node_data):
+        comm_id = item[0]
+        comm_text = item[1].strip()
+        comm_thread = item[2]
+        if len(comm_text) == 0:
+            continue
+        # sentence tokenizing
+        try:
+            raw = unicode(comm_text.replace('\n', ' '))
+            doc = nlp(raw)
+        except UnicodeDecodeError as e:
+            print 'CommentID: ' + str(comm_id)
+            continue
+        except Exception as e:
+            raise
+        else:
+            for s_idx, sent in enumerate(doc.sents):
+                tokens = []
+                for i, t in enumerate(sent):
+                    if t.is_punct or t.is_space:
+                        continue
+                    elif t.like_url:
+                        tokens.append('URL')
+                    elif t.like_email:
+                        tokens.append('EMAIL')
+                    elif t.like_num:
+                        tokens.append('NUM')
+                    elif not t.is_alpha:
+                        if re.match(r'^\.+[x|X]+', t.shape_) is not None:
+                            tokens.append(re.sub(r'^\.+', '', t.text.lower()))
+                        else:
+                            tokens.append(t.text.lower())
+                    else:
+                        tokens.append(t.text.lower())
+                # append
+                result.append((comm_id, s_idx, sent.text, ' '.join(tokens), node_id, comm_thread, comm_pos))
+    return result
 
 
 # the func that prepares data for cross-validation
