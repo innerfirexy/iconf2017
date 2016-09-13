@@ -332,4 +332,4 @@ if __name__ == '__main__':
     # prepare_cv_data(post_ids=post_ids, sent_n=10, fold_n=10, data_file='init_post_cvdata_all.pkl')
 
     # prepare data for first comments
-    first_comm_2db()
+    first_comm_2db(nlp)
