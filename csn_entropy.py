@@ -259,7 +259,7 @@ def prepare_cv_data(table, post_ids, sent_n, fold_n, data_file):
                     data_all[i+1][j].append((p_id, text.split()))
         sys.stdout.write('\r%s/%s prepared' % (i+1, fold_n))
         sys.stdout.flush()
-    print 'dumping...'
+    print '\ndumping...'
     pickle.dump(data_all, open(data_file, 'wb'))
     print 'done.'
 
