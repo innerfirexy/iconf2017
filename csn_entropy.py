@@ -198,16 +198,16 @@ def first_comm_2db(nlp):
                     if t.is_punct or t.is_space:
                         continue
                     elif t.like_url:
-                        cleaned.append('URL')
+                        tokens.append('URL')
                     elif t.like_email:
-                        cleaned.append('EMAIL')
+                        tokens.append('EMAIL')
                     elif t.like_num:
-                        cleaned.append('NUM')
+                        tokens.append('NUM')
                     elif not t.is_alpha:
                         if re.match(r'^\.+[x|X]+', t.shape_) is not None:
-                            cleaned.append(re.sub(r'^\.+', '', t.text.lower()))
+                            tokens.append(re.sub(r'^\.+', '', t.text.lower()))
                         else:
-                            cleaned.append(t.text.lower())
+                            tokens.append(t.text.lower())
                     else:
                         tokens.append(t.text.lower())
                 # insert
