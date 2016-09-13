@@ -173,8 +173,8 @@ def first_comm_2db(nlp):
         primary key (postId, sentId))'
     cur.execute(sql)
     # select raw data
-    sql = 'select CommentID, Comment where CommentThread = \"01/\"'
-    cur.execute(sql)
+    sql = 'select CommentID, Comment from newforum where CommentThread = %s'
+    cur.execute(sql, ['01/'])
     data = cur.fetchall()
     # process
     for row_idx, row in enumerate(data):
