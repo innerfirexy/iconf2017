@@ -219,6 +219,70 @@ def first_comm_2db(nlp):
                     sys.stdout.flush()
     conn.commit()
 
+# read all comments from the newforum table, and clean and insert into a new table, allCommSents
+# and add extra info (NodeID, CommentThread, relPos)
+def all_comm_2db(nlp):
+    conn = db_conn('csn')
+    cur = conn.cursor()
+    # create table
+    sql = 'create table if not exists allCommSents (postId int, sentId int, raw longtext, tokens longtext, \
+        nodeId int, thread varchar(255), inNodePos int, primary key (postId, sentId))'
+    cur.execute(sql)
+    # select all unique NodeIDs
+    sql = 'select distinct NodeID from newforum'
+    cur.execute(sql)
+    data = cur.fetchall()
+    # process
+    for row_idx, row in enumerate(data):
+        node_id = row[0]
+        # select all comments in that node
+        sql = 'select CommentID, Comment, CommentThread from newforum where NodeID = %s'
+        cur.execute(sql, [node_id])
+        node_data = cur.fetchall()
+        # for each comment
+        for comm_idx, item in enumerate(node_data):
+            comm_id = row[0]
+            comm_text = row[1].strip()
+            comm_thread = row[2]
+            if len(comm_text) == 0:
+                continue
+            # sentence tokenizing
+            try:
+                raw = unicode(comm_text.replace('\n', ' '))
+                doc = nlp(raw)
+            except UnicodeDecodeError as e:
+                print 'CommentID: ' + str(comm_id)
+                continue
+            except Exception as e:
+                raise
+            else:
+                for s_idx, sent in enumerate(doc.sents):
+                    tokens = []
+                    for i, t in enumerate(sent):
+                        if t.is_punct or t.is_space:
+                            continue
+                        elif t.like_url:
+                            tokens.append('URL')
+                        elif t.like_email:
+                            tokens.append('EMAIL')
+                        elif t.like_num:
+                            tokens.append('NUM')
+                        elif not t.is_alpha:
+                            if re.match(r'^\.+[x|X]+', t.shape_) is not None:
+                                tokens.append(re.sub(r'^\.+', '', t.text.lower()))
+                            else:
+                                tokens.append(t.text.lower())
+                        else:
+                            tokens.append(t.text.lower())
+                    # insert
+                    sql = 'insert into allCommSents values(%s, %s, %s, %s, %s, %s, %s)'
+                    cur.execute(sql, (comm_id, s_idx, sent.text, ' '.join(tokens), node_id, comm_thread, comm_idx))
+                    # print
+                    if row_idx % 100 == 0:
+                        sys.stdout.write('\r%s/%s nodes inserted' % (row_idx, len(data)))
+                        sys.stdout.flush()
+    conn.commit()
+
 
 # the func that prepares data for cross-validation
 # n-fold cross-validation are applied
@@ -263,47 +327,14 @@ def prepare_cv_data(table, post_ids, sent_n, fold_n, data_file):
     pickle.dump(data_all, open(data_file, 'wb'))
     print 'done.'
 
-# the func that compute entropy using sentences from the same position as train and test sets
-def entropy_same_pos(data_file, res_file):
-    data = pickle.load(open(data_file, 'rb'))
-    # fold_n = len(data)
-    # sent_n = len(data[data.keys()[0]])
-    fold_n = 2
-    sent_n = 8
-    results = []
-    # for each fold
-    for i in range(1, fold_n+1):
-        # for each sentence position
-        for j in range(0, sent_n):
-            # train
-            train_sents = []
-            for k in range(1, i) + range(i+1, fold_n+1):
-                for item in data[k][j]:
-                    train_sents.append(item[1])
-            print 'start training fold %s, sentId %s' % (i, j)
-            lm = NgramModel(3, train_sents)
-            pickle.dump(lm, open('models/m_'+'f'+str(i)+'_s'+str(j), 'wb'))
-            # compute
-            for item in data[i][j]:
-                try:
-                    ent = lm.entropy(item[1])
-                except Exception as e:
-                    print 'postId: ' + item[0]
-                    print 'sentId: ' + str(j)
-                    raise
-                else:
-                    results.append((item[0], j, ent))
-    # write results to file
-    with open(res_file, 'w') as fw:
-        for row in results:
-            fw.write(', '.join(map(str, row))+'\n')
 
+#
 
 
 # main
 if __name__ == '__main__':
     # load nlp
-    # nlp = spacy.load('en')
+    nlp = spacy.load('en')
 
     # tokenize initial posts
     # tokenize_init_posts(nlp)
@@ -330,5 +361,8 @@ if __name__ == '__main__':
 
     # prepare data for first comments
     # first_comm_2db(nlp)
-    post_ids = read_post_ids('firstComm_postIds_all.txt')
-    prepare_cv_data(table='firstCommSents', post_ids=post_ids, sent_n=10, fold_n=10, data_file='firstComm_cvdata_all.pkl')
+    # post_ids = read_post_ids('firstComm_postIds_all.txt')
+    # prepare_cv_data(table='firstCommSents', post_ids=post_ids, sent_n=10, fold_n=10, data_file='firstComm_cvdata_all.pkl')
+
+    # prepare data for all comments
+    all_comm_2db(nlp)
