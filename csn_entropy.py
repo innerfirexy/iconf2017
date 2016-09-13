@@ -240,10 +240,10 @@ def all_comm_2db(nlp):
         cur.execute(sql, [node_id])
         node_data = cur.fetchall()
         # for each comment
-        for comm_idx, item in enumerate(node_data):
-            comm_id = row[0]
-            comm_text = row[1].strip()
-            comm_thread = row[2]
+        for comm_pos, item in enumerate(node_data):
+            comm_id = item[0]
+            comm_text = item[1].strip()
+            comm_thread = item[2]
             if len(comm_text) == 0:
                 continue
             # sentence tokenizing
@@ -276,7 +276,7 @@ def all_comm_2db(nlp):
                             tokens.append(t.text.lower())
                     # insert
                     sql = 'insert into allCommSents values(%s, %s, %s, %s, %s, %s, %s)'
-                    cur.execute(sql, (comm_id, s_idx, sent.text, ' '.join(tokens), node_id, comm_thread, comm_idx))
+                    cur.execute(sql, (comm_id, s_idx, sent.text, ' '.join(tokens), node_id, comm_thread, comm_pos))
                     # print
                     if row_idx % 100 == 0:
                         sys.stdout.write('\r%s/%s nodes inserted' % (row_idx, len(data)))
