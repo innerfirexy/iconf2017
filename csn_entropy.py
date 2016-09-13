@@ -223,6 +223,7 @@ def first_comm_2db(nlp):
 # the func that prepares data for cross-validation
 # n-fold cross-validation are applied
 def prepare_cv_data(table, post_ids, sent_n, fold_n, data_file):
+    assert isinstance(table, str)
     assert sent_n >= 1
     assert fold_n >= 2
     assert len(post_ids) > fold_n
@@ -245,7 +246,7 @@ def prepare_cv_data(table, post_ids, sent_n, fold_n, data_file):
             data_all[i].append([])
     for i in range(0, fold_n):
         for p_id in ids_folds[i]:
-            sql = 'select tokens from %s where postId = %s'
+            sql = 'select tokens from ' + table + ' where postId = %s'
             cur.execute(sql, (table, p_id))
             rows = cur.fetchall()
             for j, row in enumerate(rows):
