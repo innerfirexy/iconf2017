@@ -183,8 +183,8 @@ def first_comm_2db(nlp):
         if len(comm_text) == 0:
             continue
         # sentence tokenizing
-        raw = unicode(comm_text.replace('\n', ' '))
         try:
+            raw = unicode(comm_text.replace('\n', ' '))
             doc = nlp(raw)
         except UnicodeDecodeError as e:
             print 'CommentID: ' + comm_id
@@ -214,7 +214,7 @@ def first_comm_2db(nlp):
                 sql = 'insert into firstCommSents values(%s, %s, %s, %s)'
                 cur.execute(sql, (comm_id, s_idx, sent.text, ' '.join(tokens)))
                 # print
-                if row_idx % 1000 == 0:
+                if row_idx % 100 == 0:
                     sys.stdout.write('\r%s/%s inserted' % (row_idx, len(data)))
                     sys.stdout.flush()
     conn.commit()
