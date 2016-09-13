@@ -13,9 +13,6 @@ import re
 from nltk_legacy.ngram import NgramModel
 from nltk.probability import LidstoneProbDist
 
-# from nltk_legacy.ngram import NgramModel
-# from nltk.probability import LidstoneProbDist
-
 # get db connection
 def db_conn(db_name):
     # db init: ssh yvx5085@brain.ist.psu.edu -i ~/.ssh/id_rsa -L 1234:localhost:3306
@@ -167,6 +164,62 @@ def read_post_ids(file_name):
     return post_ids
 
 
+# the func that read all first comments and clean and insert into a new table
+def first_comm_2db(nlp):
+    conn = db_conn('csn')
+    cur = conn.cursor()
+    # create table
+    sql = 'create table if not exists firstCommSents (postId int, sentId int, raw longtext, tokens longtext, \
+        primary key (postId, sentId))'
+    cur.execute(sql)
+    # select raw data
+    sql = 'select CommentID, Comment where CommentThread = \"01/\"'
+    cur.execute(sql)
+    data = cur.fetchall()
+    # process
+    for row_idx, row in enumerate(data):
+        comm_id = row[0]
+        comm_text = row[1].strip()
+        if len(comm_text) == 0:
+            continue
+        # sentence tokenizing
+        raw = unicode(comm_text.replace('\n', ' '))
+        try:
+            doc = nlp(raw)
+        except UnicodeDecodeError as e:
+            print 'CommentID: ' + comm_id
+            continue
+        except Exception as e:
+            raise
+        else:
+            for s_idx, sent in enumerate(doc.sents):
+                tokens = []
+                for i, t in enumerate(sent):
+                    if t.is_punct or t.is_space:
+                        continue
+                    elif t.like_url:
+                        cleaned.append('URL')
+                    elif t.like_email:
+                        cleaned.append('EMAIL')
+                    elif t.like_num:
+                        cleaned.append('NUM')
+                    elif not t.is_alpha:
+                        if re.match(r'^\.+[x|X]+', t.shape_) is not None:
+                            cleaned.append(re.sub(r'^\.+', '', t.text.lower()))
+                        else:
+                            cleaned.append(t.text.lower())
+                    else:
+                        tokens.append(t.text.lower())
+                # insert
+                sql = 'insert into firstCommSents values(%s, %s, %s, %s)'
+                cur.execute(sql, (comm_id, s_idx, sent.text, ' '.join(tokens)))
+                # print
+                if row_idx % 1000 == 0:
+                    sys.stdout.write('\r%s/%s inserted' % (row_idx, len(data)))
+                    sys.stdout.flush()
+    conn.commit()
+
+
 # the func that prepares data for cross-validation
 # n-fold cross-validation are applied
 def prepare_cv_data(post_ids, sent_n, fold_n, data_file):
@@ -252,8 +305,9 @@ def entropy_same_pos(data_file, res_file):
 
 # main
 if __name__ == '__main__':
-    # load
-    # nlp = spacy.load('en')
+    # load nlp
+    nlp = spacy.load('en')
+
     # tokenize initial posts
     # tokenize_init_posts(nlp)
     # insert tokenized initial posts to db
@@ -274,5 +328,8 @@ if __name__ == '__main__':
 
     # prepare the data for all initial posts
     # get_all_init_postIds()
-    post_ids = read_post_ids('init_NodeIDs_all.txt')
-    prepare_cv_data(post_ids=post_ids, sent_n=10, fold_n=10, data_file='init_post_cvdata_all.pkl')
+    # post_ids = read_post_ids('init_NodeIDs_all.txt')
+    # prepare_cv_data(post_ids=post_ids, sent_n=10, fold_n=10, data_file='init_post_cvdata_all.pkl')
+
+    # prepare data for first comments
+    first_comm_2db()
