@@ -323,6 +323,7 @@ def all_comm_2db_worker(args):
                         tokens.append(t.text.lower())
                 # append
                 result.append((comm_id, s_idx, sent.text, ' '.join(tokens), node_id, comm_thread, comm_pos))
+    queue.put(1)
     return result
 
 
