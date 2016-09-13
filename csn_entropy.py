@@ -222,7 +222,7 @@ def first_comm_2db(nlp):
 
 # the func that prepares data for cross-validation
 # n-fold cross-validation are applied
-def prepare_cv_data(post_ids, sent_n, fold_n, data_file):
+def prepare_cv_data(table, post_ids, sent_n, fold_n, data_file):
     assert sent_n >= 1
     assert fold_n >= 2
     assert len(post_ids) > fold_n
@@ -245,8 +245,8 @@ def prepare_cv_data(post_ids, sent_n, fold_n, data_file):
             data_all[i].append([])
     for i in range(0, fold_n):
         for p_id in ids_folds[i]:
-            sql = 'select tokens from initPostSents where postId = %s'
-            cur.execute(sql, [p_id])
+            sql = 'select tokens from %s where postId = %s'
+            cur.execute(sql, (table, p_id))
             rows = cur.fetchall()
             for j, row in enumerate(rows):
                 text = row[0]
@@ -298,15 +298,11 @@ def entropy_same_pos(data_file, res_file):
             fw.write(', '.join(map(str, row))+'\n')
 
 
-## todo
-# remove \n in tokens
-# replace the url, email, num in tokens
-
 
 # main
 if __name__ == '__main__':
     # load nlp
-    nlp = spacy.load('en')
+    # nlp = spacy.load('en')
 
     # tokenize initial posts
     # tokenize_init_posts(nlp)
@@ -329,7 +325,9 @@ if __name__ == '__main__':
     # prepare the data for all initial posts
     # get_all_init_postIds()
     # post_ids = read_post_ids('init_NodeIDs_all.txt')
-    # prepare_cv_data(post_ids=post_ids, sent_n=10, fold_n=10, data_file='init_post_cvdata_all.pkl')
+    # prepare_cv_data(table='initPostSents', post_ids=post_ids, sent_n=10, fold_n=10, data_file='init_post_cvdata_all.pkl')
 
     # prepare data for first comments
-    first_comm_2db(nlp)
+    # first_comm_2db(nlp)
+    post_ids = read_post_ids('firstComm_postIds_all.txt')
+    prepare_cv_data(table=='firstCommSents', post_ids=post_ids, sent_n=10, fold_n=10, data_file='firstComm_cvdata_all.pkl')

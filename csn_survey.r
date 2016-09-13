@@ -9,7 +9,6 @@ library(RMySQL)
 # ssh yvx5085@brain.ist.psu.edu -i ~/.ssh/id_rsa -L 1234:localhost:3306
 conn = dbConnect(MySQL(), host = '127.0.0.1', user = 'yang', port = 1234, password = "05012014", dbname = 'csn')
 
-
 # dialogue length, in number of comments
 sql = 'select CommentID, NodeID from newforum'
 df = dbGetQuery(conn, sql) # takes 78 sec from China to USA
@@ -42,4 +41,16 @@ dt.init[, CommentID := NULL]
 dt.init = unique(dt.init)
 summary(dt.init$sentN) # mean = 10, median = 8, q1 = 4, q3 = 12
 # save the NodeIDs of initial posts that have >= 8 sentences to file
-write.table(dt.init[sentN >= 8, PostID], file = 'init_NodeIDs_gt8.csv', row.names = F, col.names = F)
+write.table(dt.init[sentN >= 8, PostID], file = 'init_NodeIDs_gt8.txt', row.names = F, col.names = F)
+
+
+# survey about first comments
+sql = 'select postId, sentId from firstCommSents'
+df = dbGetQuery(conn, sql)
+dt.fc = data.table(df)
+setkey(dt.fc, postId)
+
+dt.fc.sn = dt.fc[, .(sentN = .N), by = postId]
+summary(dt.fc.sn$sentN) # mean=7.7, median=6, q1=3, q3=10
+
+write.table(dt.fc.sn$postId, file='firstComm_postIds_all.txt', row.names=F, col.names=F)
