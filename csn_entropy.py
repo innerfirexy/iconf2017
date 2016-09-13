@@ -238,10 +238,12 @@ def all_comm_2db(nlp):
     node_ids = [item[0] for item in cur.fetchall()]
     # select all data
     data = []
-    for n_id in node_ids:
+    for i, n_id in enumerate(node_ids):
         sql = 'select CommentID, Comment, CommentThread from newforum where NodeID = %s'
         cur.execute(sql, [n_id])
         data.append((n_id, cur.fetchall()))
+        sys.stdout.write('\r{}/{} nodes read'.format(i, len(node_ids)))
+        sys.stdout.flush()
     # initialize
     pool = Pool(multiprocessing.cpu_count())
     manager = Manager()
