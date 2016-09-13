@@ -278,10 +278,10 @@ def all_comm_2db(nlp):
                     sql = 'insert into allCommSents values(%s, %s, %s, %s, %s, %s, %s)'
                     cur.execute(sql, (comm_id, s_idx, sent.text, ' '.join(tokens), node_id, comm_thread, comm_pos))
                     # print
-                    if row_idx % 100 == 0:
-                        sys.stdout.write('\r%s/%s nodes inserted' % (row_idx, len(data)))
-                        sys.stdout.flush()
+                    sys.stdout.write('\rNode %s/%s, comment %s/%s inserted' % (row_idx, len(data), comm_pos, len(node_data)))
+                    sys.stdout.flush()
     conn.commit()
+
 
 
 # the func that prepares data for cross-validation
