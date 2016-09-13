@@ -330,4 +330,4 @@ if __name__ == '__main__':
     # prepare data for first comments
     # first_comm_2db(nlp)
     post_ids = read_post_ids('firstComm_postIds_all.txt')
-    prepare_cv_data(table=='firstCommSents', post_ids=post_ids, sent_n=10, fold_n=10, data_file='firstComm_cvdata_all.pkl')
+    prepare_cv_data(table='firstCommSents', post_ids=post_ids, sent_n=10, fold_n=10, data_file='firstComm_cvdata_all.pkl')
