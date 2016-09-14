@@ -63,6 +63,6 @@ dt.ac = data.table(df)
 setkey(dt.ac, postId)
 
 dt.ac.sn = dt.ac[, .(sentN = .N), by = postId]
-summary(dt.ac.sn$sentN)
+summary(dt.ac.sn$sentN) # mean=7.2, median=5, q1=3,q3=9
 
 write.table(dt.ac.sn$postId, file='allComm_postIds_all.txt', row.names=F, col.names=F)

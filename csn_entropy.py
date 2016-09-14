@@ -419,7 +419,7 @@ def prepare_cv_data(table, post_ids, sent_n, fold_n, data_file):
         for j in range(0, sent_n):
             data_all[i].append([])
     for i in range(0, fold_n):
-        for p_id in ids_folds[i]:
+        for idx, p_id in ids_folds[i]:
             sql = 'select tokens from ' + table + ' where postId = %s'
             cur.execute(sql, [p_id])
             rows = cur.fetchall()
@@ -431,8 +431,9 @@ def prepare_cv_data(table, post_ids, sent_n, fold_n, data_file):
                     continue
                 else:
                     data_all[i+1][j].append((p_id, text.split()))
-        sys.stdout.write('\r%s/%s prepared' % (i+1, fold_n))
-        sys.stdout.flush()
+            # print
+            sys.stdout.write('\r{}/{} folds, {}/{} postIds prepared'.format(i+1, fold_n, idx, len(ids_folds[i])))
+            sys.stdout.flush()
     print '\ndumping...'
     pickle.dump(data_all, open(data_file, 'wb'))
     print 'done.'
@@ -476,4 +477,6 @@ if __name__ == '__main__':
 
     # prepare data for all comments
     # all_comm_2db(nlp)
-    get_allComm_postIds('allComm_postIds_all.txt')
+    # get_allComm_postIds('allComm_postIds_all.txt')
+    post_ids = read_post_ids('allComm_postIds_all.txt')
+    prepare_cv_data(table='allCommSents', post_ids=post_ids, sent_n=10, fold_n=10, data_file='allComm_cvdata_all.pkl')
