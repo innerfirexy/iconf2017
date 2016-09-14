@@ -475,4 +475,4 @@ if __name__ == '__main__':
 
     # prepare data for all comments
     # all_comm_2db(nlp)
-    get_allComm_postIds()
+    get_allComm_postIds('allComm_postIds_all.txt')
