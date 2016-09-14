@@ -65,6 +65,8 @@ def train_compute_samepos(data_file, res_file, cleanup=False):
             compute_cmd = ['./ngram','-order','3','-lm',train_tmp_file+'.model','-ppl',test_tmp_file,'-debug','1']
             try:
                 output = subprocess.check_output(compute_cmd, stderr=subprocess.STDOUT) # !
+                # for debug
+                pickle.dump(output, open('output.pkl', 'wb'))
                 # the old pattern misses the scientific numbers, e.g., ppl = 2.30674e+06
                 # r'ppl=\s[0-9]*\.?[0-9]+\s'
                 matches = re.findall(r'ppl=\s\S+\s', output)
@@ -78,7 +80,6 @@ def train_compute_samepos(data_file, res_file, cleanup=False):
                     print 'nomatch problem \nfoldId: %s, sendId: %s' % (i, j)
                     print 'test_sent_ids len: ' + str(len(test_sent_ids))
                     print 'ppls len: ' + str(len(ppls))
-                    pickle.dump(output, open('output.pkl', 'wb'))
                     exit()
                 res = [(test_sent_ids[k], j, ppls[k]) for k in range(0, len(ppls))]
                 results += res
