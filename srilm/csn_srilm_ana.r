@@ -6,6 +6,12 @@ library(data.table)
 library(lme4)
 library(lmerTest)
 library(ggplot2)
+library(RMySQL)
+
+# db conn
+# ssh yvx5085@brain.ist.psu.edu -i ~/.ssh/id_rsa -L 1234:localhost:3306
+conn = dbConnect(MySQL(), host = '127.0.0.1', user = 'yang', port = 3306, password = "05012014", dbname = 'csn')
+
 
 # read samepos data
 df = read.table(file = 'ppl_samepos.txt', sep = ',', header = F)
@@ -113,5 +119,41 @@ p = ggplot(dt.all, aes(x = sentId, y = ent)) +
     scale_x_continuous(breaks=0:9) + ylab('entropy') +
     theme(legend.position = c(.8, .2))
 pdf('init_firstcomment_ent_diffpos.pdf', 5, 5)
+plot(p)
+dev.off()
+
+
+## all comments
+df = read.table(file = 'ac_ppl_diffpos.txt', sep = ',', header = F)
+colnames(df) = c('postId', 'sentId', 'ppl')
+dt = data.table(df)
+dt$ent = log(dt$ppl, 2)
+setkey(dt, postId)
+
+summary(lmer(ppl ~ sentId + (1|postId), dt)) #
+summary(lmer(ent ~ sentId + (1|postId), dt)) #
+
+# read postId and inNodePos from the allCommSents table
+sql = 'select distinct postId, nodeId, inNodePos from allCommSents'
+df.db = dbGetQuery(conn, sql)
+dt.db = data.table(df.db)
+setkey(dt.db, postId)
+
+# join dt and dt.db
+dt.all = dt[dt.db, nomatch = 0]
+saveRDS(dt.all, 'dt.allComm.rds')
+
+# model
+m1 = lmer(ent ~ inNodePos + (1|nodeId), dt.all)
+summary(m1) # inNodePos   1.448e-03  1.039e-04 2.250e+06   13.93   <2e-16 ***
+
+# plot
+# different inNodePos in different legend categories
+p = ggplot(dt.all[inNodePos <= 3,], aes(x = sentId, y = ent)) +
+    stat_summary(fun.data = mean_cl_boot, geom = 'ribbon', aes(.alpha=.5, fill=inNodePos)) +
+    stat_summary(fun.y = mean, geom = 'line') +
+    stat_summary(fun.y = mean, geom = 'point', aes(shape=inNodePos)) +
+    xlab('sentence position in post') + ylab('entropy')
+pdf('allComm_ent_byInNodePos_lt3.pdf', 5, 5)
 plot(p)
 dev.off()
