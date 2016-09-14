@@ -385,6 +385,7 @@ def get_allComm_postIds(file_name):
     conn = db_conn('csn')
     cur = conn.cursor()
     sql = 'select distinct postId from allCommSents'
+    cur.execute(sql)
     post_ids = [item[0] for item in cur.fetchall()]
     with open(file_name, 'w') as fw:
         for i, p_id in enumerate(post_ids):
