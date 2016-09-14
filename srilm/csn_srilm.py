@@ -162,4 +162,7 @@ if __name__ == '__main__':
     # train_compute_diffpos(data_file='../init_post_cvdata_all.pkl', res_file='ppl_diffpos.txt', cleanup=True)
 
     # first comments
-    train_compute_diffpos(data_file='../firstComm_cvdata_all.pkl', res_file='fc_ppl_diffpos.txt', cleanup=True)
+    # train_compute_diffpos(data_file='../firstComm_cvdata_all.pkl', res_file='fc_ppl_diffpos.txt', cleanup=True)
+
+    # all comments
+    train_compute_diffpos(data_file='../allComm_cvdata_all.pkl', res_file='ac_ppl_diffpos.txt', cleanup=True)
