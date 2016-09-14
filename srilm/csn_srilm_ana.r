@@ -149,10 +149,10 @@ summary(m1) # inNodePos   1.448e-03  1.039e-04 2.250e+06   13.93   <2e-16 ***
 
 # plot
 # different inNodePos in different legend categories
-p = ggplot(dt.all[inNodePos <= 3,], aes(x = sentId, y = ent)) +
+p = ggplot(dt.all[inNodePos <= 3,], aes(x = sentId, y = ent, group = inNodePos)) +
     stat_summary(fun.data = mean_cl_boot, geom = 'ribbon', aes(.alpha=.5, fill=inNodePos)) +
     stat_summary(fun.y = mean, geom = 'line') +
-    stat_summary(fun.y = mean, geom = 'point', aes(shape=inNodePos)) + scale_shape_identity() + 
+    stat_summary(fun.y = mean, geom = 'point', aes(shape=inNodePos)) + scale_shape_identity() +
     xlab('sentence position in post') + ylab('entropy')
 pdf('allComm_ent_byInNodePos_lt3.pdf', 5, 5)
 plot(p)
