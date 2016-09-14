@@ -330,7 +330,7 @@ def all_comm_2db(nlp, parallel=False):
         for i, res in enumerate(results):
             sql = 'insert into allCommSents values(%s, %s, %s, %s, %s, %s, %s)'
             cur.execute(sql, (res[0],res[1],res[2],res[3],res[4],res[5],res[6]))
-            sys.stdout.write('\r{}/{} nodes processed'.format(i, len(results)))
+            sys.stdout.write('\r{}/{} nodes inserted'.format(i, len(results)))
             sys.stdout.flush()
         conn.commit()
 
@@ -379,6 +379,18 @@ def all_comm_2db_worker(args):
                 result.append((comm_id, s_idx, sent.text, ' '.join(tokens), node_id, comm_thread, comm_pos))
     queue.put(1)
     return result
+
+# get the postIds from allCommSents
+def get_allComm_postIds(file_name):
+    conn = db_conn('csn')
+    cur = conn.cursor()
+    sql = 'select distinct postId from allCommSents'
+    post_ids = [item[0] for item in cur.fetchall()]
+    with open(file_name, 'w') as fw:
+        for i, p_id in enumerate(post_ids):
+            fw.write(str(p_id) + '\n')
+            sys.stdout.write('\r{}/{} lines writen'.format(i, len(post_ids)))
+            sys.stdout.flush()
 
 
 # the func that prepares data for cross-validation
@@ -431,7 +443,7 @@ def prepare_cv_data(table, post_ids, sent_n, fold_n, data_file):
 # main
 if __name__ == '__main__':
     # load nlp
-    nlp = spacy.load('en')
+    # nlp = spacy.load('en')
 
     # tokenize initial posts
     # tokenize_init_posts(nlp)
@@ -462,4 +474,5 @@ if __name__ == '__main__':
     # prepare_cv_data(table='firstCommSents', post_ids=post_ids, sent_n=10, fold_n=10, data_file='firstComm_cvdata_all.pkl')
 
     # prepare data for all comments
-    all_comm_2db(nlp)
+    # all_comm_2db(nlp)
+    get_allComm_postIds()

@@ -54,3 +54,15 @@ dt.fc.sn = dt.fc[, .(sentN = .N), by = postId]
 summary(dt.fc.sn$sentN) # mean=7.7, median=6, q1=3, q3=10
 
 write.table(dt.fc.sn$postId, file='firstComm_postIds_all.txt', row.names=F, col.names=F)
+
+
+## survey all comments (including the first comments)
+sql = 'select postId, sentId from allCommSents'
+df = dbGetQuery(conn, sql)
+dt.ac = data.table(df)
+setkey(dt.ac, postId)
+
+dt.ac.sn = dt.ac[, .(sentN = .N), by = postId]
+summary(dt.ac.sn$sentN)
+
+write.table(dt.ac.sn$postId, file='allComm_postIds_all.txt', row.names=F, col.names=F)
