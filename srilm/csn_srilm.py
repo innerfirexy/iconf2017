@@ -78,6 +78,7 @@ def train_compute_samepos(data_file, res_file, cleanup=False):
                     print 'nomatch problem \nfoldId: %s, sendId: %s' % (i, j)
                     print 'test_sent_ids len: ' + str(len(test_sent_ids))
                     print 'ppls len: ' + str(len(ppls))
+                    pickle.dump(output, open('output.pkl', 'wb'))
                     exit()
                 res = [(test_sent_ids[k], j, ppls[k]) for k in range(0, len(ppls))]
                 results += res
