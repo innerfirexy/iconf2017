@@ -65,7 +65,9 @@ def train_compute_samepos(data_file, res_file, cleanup=False):
             compute_cmd = ['./ngram','-order','3','-lm',train_tmp_file+'.model','-ppl',test_tmp_file,'-debug','1']
             try:
                 output = subprocess.check_output(compute_cmd, stderr=subprocess.STDOUT) # !
-                matches = re.findall(r'ppl=\s[0-9]*\.?[0-9]+\s', output)
+                # the old pattern misses the scientific numbers, e.g., ppl = 2.30674e+06
+                # r'ppl=\s[0-9]*\.?[0-9]+\s'
+                matches = re.findall(r'ppl=\s\S+\s', output)
                 ppls = [m[5:].strip() for m in matches[:-1]] # do not include the last match,cuz it's the average value
             except Exception as e:
                 print 'compute error \nfoldId: %s, sendId: %s' % (i, j)
@@ -137,7 +139,8 @@ def train_compute_diffpos(data_file, res_file, cleanup=False):
             else:
                 # compose results
                 if len(test_sent_ids) != len(ppls):
-                    print 'nomatch problem \nfoldId: %s, sendId: %s' % (i, j)
+                    print '\nnomatch problem \nfoldId: %s, sendId: %s' % (i, j)
+                    print 'test_sen_ids len: %s, ppls len: %s' % (len(test_sent_ids), len(ppls))
                     exit()
                 res = [(test_sent_ids[k], j, ppls[k]) for k in range(0, len(ppls))]
                 results += res
