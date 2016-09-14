@@ -419,7 +419,7 @@ def prepare_cv_data(table, post_ids, sent_n, fold_n, data_file):
         for j in range(0, sent_n):
             data_all[i].append([])
     for i in range(0, fold_n):
-        for idx, p_id in ids_folds[i]:
+        for idx, p_id in enumerate(ids_folds[i]):
             sql = 'select tokens from ' + table + ' where postId = %s'
             cur.execute(sql, [p_id])
             rows = cur.fetchall()
