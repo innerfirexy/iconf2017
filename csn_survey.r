@@ -7,7 +7,7 @@ library(RMySQL)
 
 # db conn
 # ssh yvx5085@brain.ist.psu.edu -i ~/.ssh/id_rsa -L 1234:localhost:3306
-conn = dbConnect(MySQL(), host = '127.0.0.1', user = 'yang', port = 1234, password = "05012014", dbname = 'csn')
+conn = dbConnect(MySQL(), host = '127.0.0.1', user = 'yang', port = 3306, password = "05012014", dbname = 'csn')
 
 # dialogue length, in number of comments
 sql = 'select CommentID, NodeID from newforum'
@@ -39,7 +39,8 @@ setkey(dt, NodeID)
 dt.init = dt.sn[dt]
 dt.init[, CommentID := NULL]
 dt.init = unique(dt.init)
-summary(dt.init$sentN) # mean = 10, median = 8, q1 = 4, q3 = 12
+summary(dt.init$sentN) # mean = 10.1, median = 8, q1 = 4, q3 = 12
+sd(dt.init$sentN, na.rm=T) # sd=11.3
 # save the NodeIDs of initial posts that have >= 8 sentences to file
 write.table(dt.init[sentN >= 8, PostID], file = 'init_NodeIDs_gt8.txt', row.names = F, col.names = F)
 
@@ -52,7 +53,7 @@ setkey(dt.fc, postId)
 
 dt.fc.sn = dt.fc[, .(sentN = .N), by = postId]
 summary(dt.fc.sn$sentN) # mean=7.7, median=6, q1=3, q3=10
-
+sd(dt.fc.sn$sentN, na.rm=T)
 write.table(dt.fc.sn$postId, file='firstComm_postIds_all.txt', row.names=F, col.names=F)
 
 
@@ -64,5 +65,5 @@ setkey(dt.ac, postId)
 
 dt.ac.sn = dt.ac[, .(sentN = .N), by = postId]
 summary(dt.ac.sn$sentN) # mean=7.2, median=5, q1=3,q3=9
-
+sd(dt.ac.sn$sentN, na.rm=T) # sd=6.8
 write.table(dt.ac.sn$postId, file='allComm_postIds_all.txt', row.names=F, col.names=F)

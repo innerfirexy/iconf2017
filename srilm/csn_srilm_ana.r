@@ -57,20 +57,23 @@ dt2$ent = log(dt2$ppl, 2)
 # models
 summary(lmer(ppl ~ sentId + (1|postId), dt2)) # ***
 summary(lmer(ent ~ sentId + (1|postId), dt2)) # ***
+# beta=4.349e-02, t = 40.61***
 
 # plots
 p1 = ggplot(dt2, aes(x = sentId, y = ppl)) +
     stat_summary(fun.data = mean_cl_boot, geom = 'ribbon', aes(.alpha = .5)) +
     stat_summary(fun.y = mean, geom = 'line') +
-    scale_x_continuous(breaks=0:9) + ylab('perplexity')
+    scale_x_continuous(breaks=0:9) + ylab('perplexity') +
 pdf('ppl_vs_sid_diffpos.pdf', 5, 5)
 plot(p1)
 dev.off()
 
-p2 = ggplot(dt2, aes(x = sentId, y = ent)) +
+p2 = ggplot(dt2, aes(x = sentId+1, y = ent)) +
     stat_summary(fun.data = mean_cl_boot, geom = 'ribbon', aes(.alpha = .5)) +
     stat_summary(fun.y = mean, geom = 'line') +
-    scale_x_continuous(breaks=0:9) + ylab('entropy')
+    # scale_x_continuous(breaks=0:9) +
+    scale_x_log10(breaks=c(1:10)) +
+    xlab('sentence position') + ylab('entropy')
 pdf('ent_vs_sid_diffpos.pdf', 5, 5)
 plot(p2)
 dev.off()
@@ -140,20 +143,47 @@ dt.db = data.table(df.db)
 setkey(dt.db, postId)
 
 # join dt and dt.db
-dt.all = dt[dt.db, nomatch = 0]
-saveRDS(dt.all, 'dt.allComm.rds')
+dt.allComm = dt[dt.db, nomatch = 0]
+# saveRDS(dt.allComm, 'dt.allComm.rds')
+dt.allComm = readRDS('dt.allComm.rds')
 
 # model
-m1 = lmer(ent ~ inNodePos + (1|nodeId), dt.all)
+m1 = lmer(ent ~ inNodePos + (1|nodeId), dt.allComm)
 summary(m1) # inNodePos   1.448e-03  1.039e-04 2.250e+06   13.93   <2e-16 ***
 
+m2 = lmer(ent ~ sentId + (1|postId), dt.allComm[sample(1:nrow(dt.allComm), 100000)])
+summary(m2) # beta =1.382e-02, ***
+
+
 # plot
-# different inNodePos in different legend categories
-p = ggplot(dt.all[inNodePos <= 3,], aes(x = sentId, y = ent, group = inNodePos)) +
-    stat_summary(fun.data = mean_cl_boot, geom = 'ribbon', aes(.alpha=.5, fill=inNodePos)) +
+# different inNodePos in different facets
+p = ggplot(dt.allComm[inNodePos <= 6,], aes(x = sentId, y = ent)) +
+    stat_summary(fun.data = mean_cl_boot, geom = 'ribbon') +
     stat_summary(fun.y = mean, geom = 'line') +
-    stat_summary(fun.y = mean, geom = 'point', aes(shape=inNodePos)) + scale_shape_identity() +
-    xlab('sentence position in post') + ylab('entropy')
-pdf('allComm_ent_byInNodePos_lt3.pdf', 5, 5)
+    stat_summary(fun.y = mean, geom = 'point') +
+    xlab('sentence position in post') + ylab('entropy') +
+    facet_grid(. ~ inNodePos)
+pdf('allComm_ent_byInNodePos_lt3.pdf', 10, 2)
 plot(p)
 dev.off()
+
+
+## combine initial posts and all comment posts
+dt2[, type:='Initial posts']
+dt.all.copy = dt.allComm
+dt.all.copy[, type:='Comment posts'][, nodeId:=NULL][, inNodePos:=NULL]
+dt.init_all = rbindlist(list(dt2, dt.all.copy))
+
+p = ggplot(dt.init_all, aes(x = sentId+1, y = ent, group = type)) +
+    stat_summary(fun.data = mean_cl_boot, geom = 'ribbon', aes(fill=type)) +
+    stat_summary(fun.y = mean, geom = 'line', aes(lty=type)) +
+    # scale_x_continuous(breaks=0:9) +
+    scale_x_log10(breaks=c(1:10)) +
+    xlab('Sentence position within post') + ylab('Per-word entropy') +
+    theme(legend.position=c(.8, .5))
+pdf('init&all_ent_inPostPos.pdf', 4, 4)
+plot(p)
+dev.off()
+
+# test the difference between initial posts and comment posts
+t.test(dt2$ent, dt.all.copy$ent) # t = 104.37 ***
