@@ -173,7 +173,7 @@ p = ggplot(dt.allComm[inNodePos <= 5,], aes(x = sentId+1, y = ent)) +
     stat_summary(fun.y = mean, geom = 'point') +
     xlab('sentence position in post') + ylab('entropy') +
     # scale_x_log10(breaks=c(1,5,10)) +
-    scale_x_continuous(breaks=c(1,5,10)) + 
+    scale_x_continuous(breaks=c(1,5,10)) +
     facet_grid(. ~ inNodePos_text)
 pdf('allComm_ent_byInNodePos_linear.pdf', 10, 2)
 plot(p)
@@ -183,17 +183,18 @@ dev.off()
 ## combine initial posts and all comment posts
 dt2[, type:='Initial posts']
 dt.all.copy = dt.allComm
-dt.all.copy[, type:='Comment posts'][, nodeId:=NULL][, inNodePos:=NULL]
+dt.all.copy[, type:='Comment posts'][, nodeId:=NULL][, inNodePos:=NULL][, inNodePos_text:=NULL]
 dt.init_all = rbindlist(list(dt2, dt.all.copy))
 
 p = ggplot(dt.init_all, aes(x = sentId+1, y = ent, group = type)) +
     stat_summary(fun.data = mean_cl_boot, geom = 'ribbon', aes(fill=type)) +
     stat_summary(fun.y = mean, geom = 'line', aes(lty=type)) +
     # scale_x_continuous(breaks=0:9) +
-    scale_x_log10(breaks=c(1:10)) +
+    # scale_x_log10(breaks=c(1:10)) +
+    scale_x_continuous(breaks=c(1:10)) + 
     xlab('Sentence position within post') + ylab('Per-word entropy') +
     theme(legend.position=c(.8, .5))
-pdf('init_all_ent_inPostPos.pdf', 4, 4)
+pdf('init_all_ent_inPostPos_linear.pdf', 4, 4)
 plot(p)
 dev.off()
 
