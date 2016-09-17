@@ -147,9 +147,15 @@ dt.allComm = dt[dt.db, nomatch = 0]
 # saveRDS(dt.allComm, 'dt.allComm.rds')
 dt.allComm = readRDS('dt.allComm.rds')
 
+# mean number of comment posts in thread
+setkey(dt.allComm, nodeId)
+dt.allComm.stats = dt.allComm[, .(postNum = length(unique(postId))), by = nodeId]
+mean(dt.allComm.stats$postNum) # 8.4
+sd(dt.allComm.stats$postNum) # 9.7
+
 # model
-m1 = lmer(ent ~ inNodePos + (1|nodeId), dt.allComm)
-summary(m1) # inNodePos   1.448e-03  1.039e-04 2.250e+06   13.93   <2e-16 ***
+m1 = lmer(ent ~ inNodePos + (1|nodeId) + (1|sentId), dt.allComm)
+summary(m1) # inNodePos   1.488e-03  1.039e-04 2.248e+06   14.32   <2e-16 ***
 
 m2 = lmer(ent ~ sentId + (1|postId), dt.allComm[sample(1:nrow(dt.allComm), 100000)])
 summary(m2) # beta =1.382e-02, ***
@@ -157,13 +163,19 @@ summary(m2) # beta =1.382e-02, ***
 
 # plot
 # different inNodePos in different facets
-p = ggplot(dt.allComm[inNodePos <= 6,], aes(x = sentId, y = ent)) +
+dt.allComm$inNodePos_text = ''
+for (i in 0:5) {
+    dt.allComm[inNodePos == i, inNodePos_text := paste('Comment post', i+1)]
+}
+p = ggplot(dt.allComm[inNodePos <= 5,], aes(x = sentId+1, y = ent)) +
     stat_summary(fun.data = mean_cl_boot, geom = 'ribbon') +
     stat_summary(fun.y = mean, geom = 'line') +
     stat_summary(fun.y = mean, geom = 'point') +
     xlab('sentence position in post') + ylab('entropy') +
-    facet_grid(. ~ inNodePos)
-pdf('allComm_ent_byInNodePos_lt3.pdf', 10, 2)
+    # scale_x_log10(breaks=c(1,5,10)) +
+    scale_x_continuous(breaks=c(1,5,10)) + 
+    facet_grid(. ~ inNodePos_text)
+pdf('allComm_ent_byInNodePos_linear.pdf', 10, 2)
 plot(p)
 dev.off()
 
@@ -181,7 +193,7 @@ p = ggplot(dt.init_all, aes(x = sentId+1, y = ent, group = type)) +
     scale_x_log10(breaks=c(1:10)) +
     xlab('Sentence position within post') + ylab('Per-word entropy') +
     theme(legend.position=c(.8, .5))
-pdf('init&all_ent_inPostPos.pdf', 4, 4)
+pdf('init_all_ent_inPostPos.pdf', 4, 4)
 plot(p)
 dev.off()
 
